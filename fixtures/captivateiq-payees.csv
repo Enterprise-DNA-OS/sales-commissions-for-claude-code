@@ -1,0 +1,4 @@
+Employee ID,Name,Email,Title,Team,Manager,Country,Payout Currency,Start Date,Employment Type
+EMP-201,Hemi Walker,hemi@example.com,Account Executive,NZ Sales,Grant Hollis,New Zealand,NZD,03/02/2025,Full time
+EMP-202,"O'Brien, Kate",kate@example.com,Senior Account Executive,AU Sales,Leah Moore,Australia,AUD,2024-11-18,Full time
+EMP-203,Sione Tupou,sione@example.com,Referral Partner,Partners,Grant Hollis,New Zealand,NZD,01/07/2025,Contractor

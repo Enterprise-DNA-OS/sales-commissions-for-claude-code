@@ -13,7 +13,9 @@ That layer used to be the whole product, because talking to a database was hard.
 
 ## What you give up
 
-- **A visual board.** Stages are a table you ask about, not cards you drag.
+- **A rep portal.** CaptivateIQ gives every payee a login to watch their own numbers move. Here reps get a statement each month (drafted or rendered as branded HTML) and the admin answers questions. A read-only rep page is a customisation.
+- **A plan designer with drag-and-drop formulas.** Plans here are rate bands and a clawback window in plain tables. A plan that needs a formula the bands cannot express is a code change, which Claude Code writes and tests with you.
+- **Live CRM sync.** Deals come in by import or by command. A scheduled pull from your CRM is a customisation.
 - **A phone app.** It runs where Claude Code runs.
 - **A vendor help desk.** This is open source. Enterprise DNA supports the installed version for businesses that want someone to call.
 

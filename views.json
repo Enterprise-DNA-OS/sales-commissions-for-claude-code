@@ -1,13 +1,41 @@
 [
   {
     "name": "week",
-    "title": "This week",
-    "subtitle": "Sales Commissions for Claude Code: what needs attention, rendered by npm run view",
+    "title": "Commissions this week",
+    "subtitle": "What needs doing before the next payroll, rendered by npm run view",
     "sections": [
       {
         "title": "Needs attention",
-        "note": "TODO(author): point this at the industry's attention view (overdue, stuck, quiet).",
-        "sql": "select 'replace me' as item, 'TODO(author)' as why"
+        "note": "Overdue locks, old disputes, clawbacks not applied, close issues and compliance breaches.",
+        "sql": "select 'Period past month end, not locked' as item, name as about, (current_date - ends_on) || ' days since month end' as why from comm.periods where status = 'open' and ends_on < current_date union all select 'Clawback not applied', payee, deal || ' cancelled ' || cancelled_on from comm.clawback_queue union all select 'Close issue: ' || issue, item, period || ': ' || coalesce(detail, '') from comm.close_issues union all select 'Compliance: ' || rule, coalesce(payee, ''), finding from comm.compliance_findings where severity = 'breached'"
+      },
+      {
+        "title": "Attainment this month",
+        "note": "Credited value against monthly quota, and commission earned so far.",
+        "sql": "select payee, plan, currency, quota_cents, credited_cents, attainment_pct as attainment, (commission_cents + adjustments_cents) as earned_cents from comm.period_commission where current_date between (select starts_on from comm.periods where id = period_id) and (select ends_on from comm.periods where id = period_id) order by attainment_pct desc"
+      },
+      {
+        "title": "Open disputes",
+        "sql": "select y.name as payee, p.name as period, s.owner, (current_date - s.raised_on) as days_open, s.detail from comm.disputes s join comm.payees y on y.id = s.payee_id join comm.periods p on p.id = s.period_id where s.status = 'open' order by s.raised_on"
+      }
+    ]
+  },
+  {
+    "name": "finance",
+    "title": "Commission accruals and contract costs",
+    "subtitle": "For the month-end close: what is owed, what is on cost, what to capitalise",
+    "sections": [
+      {
+        "title": "Owed but not yet paid, by currency",
+        "sql": "select p.name as period, p.status, po.currency, count(*)::int as payees, sum(po.total_cents)::bigint as amount_cents, sum(po.super_due_cents)::bigint as super_due_cents from comm.payouts po join comm.periods p on p.id = po.period_id where p.status = 'locked' or (p.status = 'paid' and po.super_due_cents > 0 and po.super_paid_on is null) group by p.name, p.status, po.currency order by p.name"
+      },
+      {
+        "title": "Earned in open periods",
+        "sql": "select period, currency, sum(commission_cents + adjustments_cents)::bigint as earned_cents from comm.period_commission where status = 'open' group by period, currency order by period, currency"
+      },
+      {
+        "title": "Commission cost as a share of credited sales",
+        "sql": "select period, team, currency, round(100.0 * sum(commission_cents + adjustments_cents) / nullif(sum(credited_cents), 0), 1) as cost_pct from comm.period_commission group by period, team, currency order by period desc, team"
       }
     ]
   }

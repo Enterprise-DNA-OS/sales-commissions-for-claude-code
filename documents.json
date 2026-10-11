@@ -1,11 +1,24 @@
 [
   {
-    "name": "example",
-    "title": "TODO(author): the first document this industry must produce",
-    "for_each": "select gen_random_uuid() as id, 'Example' as name",
+    "name": "commission-statement",
+    "title": "Commission statement",
+    "for_each": "select po.id, y.name || ' ' || p.name as name from comm.payouts po join comm.payees y on y.id = po.payee_id join comm.periods p on p.id = po.period_id where not p.imported order by p.starts_on, y.name",
     "file": "name",
     "sections": [
-      { "title": "Details", "sql": "select 'replace me' as item, $1::text as record_id" }
+      { "title": "Summary", "sql": "select y.name as payee, p.name as period, po.currency, po.quota_cents, po.credited_cents, po.commission_cents, po.adjustments_cents, po.total_cents from comm.payouts po join comm.payees y on y.id = po.payee_id join comm.periods p on p.id = po.period_id where po.id = $1" },
+      { "title": "How it was worked out", "note": "Every credited deal, each quota band and its rate, and every adjustment. Frozen when the period locked.", "sql": "select l.kind as line, l.label as detail, l.basis_cents, l.rate_pct as rate, l.amount_cents, po.currency from comm.payout_lines l join comm.payouts po on po.id = l.payout_id where l.payout_id = $1 order by l.position", "columns": ["line", "detail", "basis_cents", "rate", "amount_cents"] },
+      { "title": "Super or KiwiSaver on this payment", "sql": "select y.country, y.employment, y.retirement_rate_pct as rate, po.super_due_cents, po.super_paid_on, po.currency from comm.payouts po join comm.payees y on y.id = po.payee_id where po.id = $1", "columns": ["country", "employment", "rate", "super_due_cents", "super_paid_on"] }
+    ]
+  },
+  {
+    "name": "plan-letter",
+    "title": "Commission plan letter",
+    "for_each": "select a.id, y.name || ' ' || pl.name as name from comm.assignments a join comm.payees y on y.id = a.payee_id join comm.plans pl on pl.id = a.plan_id where a.ends_on is null or a.ends_on >= current_date order by y.name",
+    "file": "name",
+    "sections": [
+      { "title": "Your plan", "sql": "select y.name as payee, pl.name as plan, a.monthly_quota_cents as monthly_quota_cents, y.currency, a.starts_on, coalesce(a.ends_on::text, 'until replaced') as ends_on, pl.clawback_days || ' days' as clawback_window from comm.assignments a join comm.payees y on y.id = a.payee_id join comm.plans pl on pl.id = a.plan_id where a.id = $1", "columns": ["payee", "plan", "monthly_quota_cents", "starts_on", "ends_on", "clawback_window"] },
+      { "title": "Rates by quota band", "note": "Each band pays its rate on the part of your credited sales that falls inside it.", "sql": "select trim_scale(t.floor_pct) || '% to ' || coalesce(trim_scale(t.ceiling_pct) || '%', 'no limit') as band, t.rate_pct as rate from comm.assignments a join comm.plan_tiers t on t.plan_id = a.plan_id where a.id = $1 order by t.floor_pct" },
+      { "title": "Acceptance", "note": "Sign and return. Commission is paid against the plan you have accepted.", "sql": "select coalesce(a.accepted_on::text, 'Not yet accepted') as accepted_on, coalesce(a.acceptance_evidence, '') as evidence from comm.assignments a where a.id = $1" }
     ]
   }
 ]
